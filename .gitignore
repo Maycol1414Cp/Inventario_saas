@@ -10,9 +10,7 @@ backend/venv/
 __pycache__/
 *.pyc
 
-# Env
-.env
-.env.*
+
 
 # Uploads / runtime
 uploads/

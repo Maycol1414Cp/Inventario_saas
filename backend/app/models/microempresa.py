@@ -2,7 +2,6 @@ import re
 from flask_login import UserMixin
 from .base import db
 
-
 _TIME_RANGE_RE = re.compile(r"^\s*\d{2}:\d{2}\s*-\s*\d{2}:\d{2}\s*$")
 
 
@@ -11,26 +10,32 @@ class Microempresa(UserMixin, db.Model):
 
     tenant_id = db.Column(db.BigInteger, primary_key=True)
     nombre = db.Column(db.String(150), nullable=False)
+
     logo_url = db.Column(db.Text)
     direccion = db.Column(db.Text, nullable=False)
     horario_atencion = db.Column(db.String(100), nullable=False)
+
     nombre_propietario = db.Column(db.String(100), nullable=False)
     apellido_paterno_propietario = db.Column(db.String(100), nullable=False)
     apellido_materno_propietario = db.Column(db.String(100), nullable=False)
+
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.Text, nullable=False)
     estado = db.Column(db.String(20), nullable=False, default="activo")
+
+    # Relación (1 a muchos)
+    clientes = db.relationship(
+        "Cliente",
+        back_populates="microempresa",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
 
     def get_id(self):
         return f"microempresa:{self.tenant_id}"
 
     @property
     def tipo_tienda(self) -> str:
-        """
-        Derivado:
-        - Si horario_atencion es HH:MM - HH:MM => fisica
-        - Si no => virtual
-        """
         h = (self.horario_atencion or "").strip()
         return "fisica" if _TIME_RANGE_RE.match(h) else "virtual"
 
@@ -46,6 +51,5 @@ class Microempresa(UserMixin, db.Model):
             "apellido_materno_propietario": self.apellido_materno_propietario,
             "email": self.email,
             "estado": self.estado,
-            # ✅ extra útil para frontend (no cambia BD)
             "tipo_tienda": self.tipo_tienda,
         }

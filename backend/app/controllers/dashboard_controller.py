@@ -1,3 +1,4 @@
+# dashboard_controller.py
 from flask import Blueprint, jsonify, session
 from flask_login import current_user
 
@@ -24,6 +25,8 @@ def dashboard():
         clientes = Cliente.query.order_by(Cliente.nombre).all()
         admins = AdminSu.query.order_by(AdminSu.apellido_paterno, AdminSu.nombre).all()
 
+        tenant_name = {m.tenant_id: m.nombre for m in microempresas}
+
         return jsonify(
             {
                 "role": user_role,
@@ -48,9 +51,7 @@ def dashboard():
                         "nombre": m.nombre,
                         "email": m.email,
                         "estado": m.estado,
-                        # ✅ NUEVO
                         "tipo_tienda": getattr(m, "tipo_tienda", None),
-                        # (opcional) si quieres ver también en la lista:
                         "direccion": m.direccion,
                         "horario_atencion": m.horario_atencion,
                     }
@@ -59,6 +60,8 @@ def dashboard():
                 "clientes": [
                     {
                         "id": c.id_cliente,
+                        "tenant_id": c.tenant_id,
+                        "microempresa_nombre": tenant_name.get(c.tenant_id),
                         "nombre": c.nombre,
                         "apellido_paterno": c.apellido_paterno,
                         "apellido_materno": c.apellido_materno,
@@ -74,16 +77,20 @@ def dashboard():
 
     if user_role == "microempresa":
         tenant_id = user_data.get("tenant_id") if isinstance(user_data, dict) else None
-        productos_count = 0
-        if tenant_id is not None:
-            productos_count = Producto.query.filter_by(tenant_id=tenant_id).count()
+        if tenant_id is None:
+            return jsonify({"error": "Tenant inválido"}), 400
 
-        # ✅ aquí ya llega tipo_tienda porque user_data viene de to_dict()
+        productos_count = Producto.query.filter_by(tenant_id=tenant_id).count()
+        clientes_count = Cliente.query.filter_by(tenant_id=tenant_id).count()
+
         return jsonify(
             {
                 "role": user_role,
                 "microempresa": user_data,
-                "counts": {"productos": productos_count},
+                "counts": {
+                    "productos": productos_count,
+                    "clientes": clientes_count,
+                },
             }
         )
 
@@ -97,9 +104,7 @@ def dashboard():
                         "tenant_id": m.tenant_id,
                         "nombre": m.nombre,
                         "email": m.email,
-                        # ✅ NUEVO
                         "tipo_tienda": getattr(m, "tipo_tienda", None),
-                        # (opcional)
                         "estado": m.estado,
                     }
                     for m in microempresas

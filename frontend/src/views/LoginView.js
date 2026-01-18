@@ -189,7 +189,7 @@ const LoginView = ({
       ) : (
         <form className="card" onSubmit={onSubmit}>
           <label>
-            Usuario
+            Email
             <input name="username" value={form.username} onChange={onChange} required />
           </label>
           <label>

@@ -1,17 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+
 import ForgotPasswordView from "./views/ForgotPasswordView";
 import ResetPasswordView from "./views/ResetPasswordView";
 
-// ✅ NUEVO (modulo 2)
+// (modulo 2)
 import MicroempresaSignupWizard from "./views/registro/MicroempresaSignupWizard";
 import SuperUsuarioPendientes from "./views/dashboards/SuperUsuarioPendientes";
 
-// ✅ NUEVO: Planes (super admin)
+//Planes (super admin)
 import SuperUsuarioPlanes from "./views/dashboards/SuperUsuarioPlanes";
 
 import SuperUsuarioPlanCreate from "./views/dashboards/SuperUsuarioPlanCreate";
+// Gestión de clientes (microempresa)
+import GestionClientes from "./views/dashboards/MicroempresaClientes";
+
 
 
 import {
@@ -81,8 +85,9 @@ const roleMenus = {
   ],
   microempresa: [
     { path: "/dashboard", label: "Inicio" },
-    { path: "/mi-empresa", label: "Mi empresa" },
     { path: "/productos", label: "Productos" },
+    { path: "/gestion-clientes", label: "Gestión de clientes" },
+    { path: "/mi-empresa", label: "Mi empresa" },
   ],
   cliente: [
     { path: "/dashboard", label: "Inicio" },
@@ -595,8 +600,17 @@ export default function App() {
             element={
               <SuperUsuarioClientes
                 items={dashboardData?.clientes || []}
+                microempresas={dashboardData?.microempresas || []}
                 onDeactivate={handleDeactivateCliente}
                 onActivate={handleActivateCliente}
+                onUpdate={async (id, payload) => {
+                  const { response, data } = await updateCliente(id, payload);
+                  if (!response.ok) {
+                    setMessage(data.error || "Ocurrió un error");
+                    return;
+                  }
+                  await loadDashboard();
+                }}
               />
             }
           />
@@ -627,6 +641,11 @@ export default function App() {
                 dashboardData={dashboardData}
               />
             }
+          />
+          {/*gestión de clientes */}
+          <Route
+            path="/gestion-clientes"
+            element={<GestionClientes />}
           />
           <Route
             path="/mi-empresa"
